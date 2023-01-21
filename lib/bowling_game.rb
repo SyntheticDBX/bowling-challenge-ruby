@@ -30,7 +30,7 @@ class Game
         if @frames.length == 0
             @frames.push(Frame.new)
         end
-        if @frames.last.is_strike? || @frames.last.rolls.length == 2
+        if @frames.last.is_strike? || @frames.last.roll.length == 2
             @frames.push(Frame.new)
         end
         @frames.last.roll(pins)
@@ -40,13 +40,13 @@ class Game
         @frames.each_with_index.reduce(0) do |score, (frame, index)|
             score += frame.score
             if frame.is_strike?
-                score += @frames[index + 1].rolls[0]
-                score += @frames[index + 1].rolls[1]
+                score += @frames[index + 1].roll[0]
+                score += @frames[index + 1].roll[1]
                 if @frames[index + 1].is_strike?
-                    score += @frames[index + 2].rolls[0]
+                    score += @frames[index + 2].roll[0]
                 end
             elsif frame.is_spare?
-                score += @frames[index + 1].rolls[0]
+                score += @frames[index + 1].roll[0]
             end
             score
         end
