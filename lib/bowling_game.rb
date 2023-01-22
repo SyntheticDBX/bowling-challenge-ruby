@@ -1,55 +1,53 @@
-# Bowling game logic
-class Frame
-    def initialize
-        @rolls = []
-    end
-
-    def roll(pins)
-        @rolls.push(pins)
-    end
-    
-    def score
-        @rolls.reduce(:+)
-    end
-
-    def is_strike?
-        @rolls[0] == 10
-    end
-
-    def is_spare?
-        @rolls[0] + @rolls[1] == 10
-    end
-end
-
 class Game
+    class BowlingError < StandardError; end
+
+    class GameFrame
+        def initialize
+            @rolls = 0
+            @total = 0
+            @closed = false
+        end
+
+        attr_accessor :rolls, :total, :closed
+
+        def add_extra_points(pins)
+            return if @closed
+
+            @total += pins
+            @rolls += 1
+            @closed = true if @rolls == 3
+        end
+    end
+
     def initialize
         @frames = []
+        @frame = GameFrame.new
+        @current_frame = 0
     end
 
     def roll(pins)
-        if @frames.length == 0
-            @frames.push(Frame.new)
-        end
-        if @frames.last.is_strike? || @frames.last.roll.length == 2
-            @frames.push(Frame.new)
-        end
-        @frames.last.roll(pins)
+        raise BowlingError if @frames[9]&.closed
+        raise BowlingError if pins.negative? || (pins > 10)
+
+        @frame.rolls += 1
+        @frame.total += pins
+
+        raise BowlingError if @frame.total > 10
+
+        @frames[@current_frame - 1]&.add_extra_points(pins) if @current_frame.positive?
+        @frames[@current_frame - 2]&.add_extra_points(pins) if @current_frame > 1
+
+        return unless @frame.total == 10 || @frame.rolls == 2
+
+        @frame.closed = true if @frame.total < 10
+        @frames.push(@frame) if @current_frame < 10
+        @frame = GameFrame.new
+        @current_frame += 1
     end
 
     def score
-        @frames.each_with_index.reduce(0) do |score, (frame, index)|
-            score += frame.score
-            if frame.is_strike?
-                score += @frames[index + 1].roll[0]
-                score += @frames[index + 1].roll[1]
-                if @frames[index + 1].is_strike?
-                    score += @frames[index + 2].roll[0]
-                end
-            elsif frame.is_spare?
-                score += @frames[index + 1].roll[0]
-            end
-            score
-        end
+        raise BowlingError unless @frames[9]&.closed
+
+        @frames.map(&:total).sum
     end
 end
-
